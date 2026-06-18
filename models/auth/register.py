@@ -9,6 +9,8 @@ from models.security.jwt import create_token
 from models.auth.nthid import genth
 from models.security.ratelimiter import limiter
 
+from pydantic import BaseModel, Field, field_validator
+
 router = APIRouter(prefix="/api/v1/nth/auth")
 
 pwd_context = CryptContext(
@@ -21,7 +23,14 @@ class RegisterRequest(BaseModel):
     first_name: str = Field(min_length=2, max_length=50)
     last_name: str = Field(min_length=2, max_length=50)
     email: str = Field(min_length=5, max_length=255)
-    password: str = Field(min_length=4, max_length=72)
+    password: str = Field(min_length=4, max_length=72)  # max_length للحروف
+
+    @field_validator("password")
+    @classmethod
+    def password_byte_limit(cls, v):
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must not exceed 72 bytes")
+        return v
 
 
 @router.post("/register")
